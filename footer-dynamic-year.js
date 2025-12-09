@@ -1,14 +1,3 @@
-/**
- * Footer Dynamic Year
- *
- * Remplace toutes les occurrences de {{currentYear}} dans le texte
- * par l'année courante (ex. 2025).
- *
- * Usage dans Squarespace :
- * - Écrire simplement {{currentYear}} dans un bloc de texte
- *   (ex. bloc de texte du footer : "© {{currentYear}} Nom de la société")
- */
-
 (function () {
   const replaceCurrentYear = () => {
     const currentYear = new Date().getFullYear();
