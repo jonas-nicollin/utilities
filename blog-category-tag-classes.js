@@ -1,4 +1,3 @@
-/* Adds categories and tags to body in blog posts. */
 (function() {
   document.addEventListener("DOMContentLoaded", function () {
     const body = document.body;
