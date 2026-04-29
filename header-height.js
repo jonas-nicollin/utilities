@@ -1,54 +1,58 @@
 (function () {
-  const updateHeaderHeight = () => {
-    const header = document.getElementById('header');
+  function updateHeaderHeight() {
+    var header = document.getElementById('header');
     if (!header) return;
 
-    const computedStyle = window.getComputedStyle(header);
-    const transform = computedStyle.transform;
-    let height = 0;
+    var height = 0;
+    var transform = window.getComputedStyle(header).transform;
 
-    // Vérifie si le header est visuellement caché par transform: translateY(-100%)
-    const isTranslatedOut =
-      transform.includes('matrix') && transform.includes('-1');
-
-    if (!isTranslatedOut) {
+    if (transform && transform !== 'none') {
+      // DOMMatrix parse la matrice CSS correctement
+      try {
+        var matrix = new DOMMatrix(transform);
+        // m42 = translateY — si le header est sorti par le haut, hauteur = 0
+        var isHidden = matrix.m42 <= -(header.offsetHeight * 0.9);
+        height = isHidden ? 0 : header.offsetHeight;
+      } catch (_) {
+        height = header.offsetHeight;
+      }
+    } else {
       height = header.offsetHeight;
     }
 
-    document.documentElement.style.setProperty('--header-height', `${height}px`);
-  };
+    document.documentElement.style.setProperty('--header-height', height + 'px');
+  }
 
-  // 1. Mise à jour initiale
-  document.addEventListener('DOMContentLoaded', updateHeaderHeight);
+  // Init
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', updateHeaderHeight);
+  } else {
+    updateHeaderHeight();
+  }
 
-  // 2. Sur redimensionnement / orientation
-  let resizeTimeout;
-  const onResize = () => {
-    cancelAnimationFrame(resizeTimeout);
-    resizeTimeout = requestAnimationFrame(updateHeaderHeight);
-  };
+  // Resize + orientation
+  var resizeRaf;
+  function onResize() {
+    cancelAnimationFrame(resizeRaf);
+    resizeRaf = requestAnimationFrame(updateHeaderHeight);
+  }
   window.addEventListener('resize', onResize);
   window.addEventListener('orientationchange', onResize);
 
-  // 3. Sur changement de taille dynamique
-  if ('ResizeObserver' in window) {
-    const header = document.getElementById('header');
-    if (header) {
-      const resizeObserver = new ResizeObserver(updateHeaderHeight);
-      resizeObserver.observe(header);
-    }
+  // Scroll (header scroll-back)
+  window.addEventListener('scroll', updateHeaderHeight, { passive: true });
+
+  // ResizeObserver sur le header
+  var header = document.getElementById('header');
+  if (header && 'ResizeObserver' in window) {
+    new ResizeObserver(updateHeaderHeight).observe(header);
   }
 
-  // 4. Sur changement de classe ou style
-  const header = document.getElementById('header');
+  // MutationObserver (classe .shrink, style transform)
   if (header && 'MutationObserver' in window) {
-    const mutationObserver = new MutationObserver(updateHeaderHeight);
-    mutationObserver.observe(header, {
+    new MutationObserver(updateHeaderHeight).observe(header, {
       attributes: true,
       attributeFilter: ['style', 'class'],
     });
   }
-
-  // 5. Sur scroll (utile pour le mode Scroll Back)
-  window.addEventListener('scroll', updateHeaderHeight);
 })();
